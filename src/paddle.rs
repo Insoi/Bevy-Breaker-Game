@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use crate::Collider;
+use crate::walls::{LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
 
 pub const PADDLE_START_Y: f32 = -150.0;
 pub const PADDLE_SIZE: Vec2 = Vec2::new(120.0, 20.0);
@@ -31,6 +33,7 @@ pub fn spawn_paddle(
             ..default()
         },
         Paddle,
+        Collider { size: PADDLE_SIZE },
         Movement { left_key, right_key },
     ));
 }
@@ -49,7 +52,11 @@ pub fn move_paddle(
             direction += 1.0;
         }
 
-        let new_x = direction * PADDLE_SPEED * time.delta_secs();
-        transform.translation.x += new_x;
+        let mut new_x = transform.translation.x + direction * PADDLE_SPEED * time.delta_secs();
+
+        new_x = new_x.min(RIGHT_WALL - (WALL_THICKNESS + PADDLE_SIZE.x) * 0.5);
+        new_x = new_x.max(LEFT_WALL + (WALL_THICKNESS + PADDLE_SIZE.x) * 0.5);
+
+        transform.translation.x = new_x;
     }
 }

@@ -1,10 +1,17 @@
-mod paddle; mod ball;
+mod paddle; mod ball; mod walls;
 
 use bevy::prelude::*;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 use paddle::{spawn_paddle, move_paddle};
 use ball::{spawn_ball, apply_velocity};
+use walls::{spawn_walls};
+use crate::ball::check_ball_collisions;
+
+#[derive(Component)]
+pub struct Collider {
+    size: Vec2,
+}
 
 fn main() {
     App::new()
@@ -12,7 +19,14 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(LogDiagnosticsPlugin::default())
         .add_systems(Startup, setup)
-        .add_systems(FixedUpdate, (move_paddle, apply_velocity))
+        .add_systems(
+            FixedUpdate,
+            (
+                move_paddle,
+                apply_velocity,
+                check_ball_collisions.after(apply_velocity),
+            ),
+        )
         .run();
 }
 
@@ -24,7 +38,8 @@ fn setup(
     commands.spawn(Camera2d::default());
 
     // paddle(s)
-    spawn_paddle(&mut commands, 0., KeyCode::KeyA, KeyCode::KeyD);
+    spawn_paddle(&mut commands, 0., KeyCode::ArrowLeft, KeyCode::ArrowRight);
     spawn_ball(&mut commands, &asset_server);
+    spawn_walls(&mut commands);
     //spawn_paddle(&mut comman-ds, 300., KeyCode::ArrowLeft, KeyCode::ArrowRight);
 }
