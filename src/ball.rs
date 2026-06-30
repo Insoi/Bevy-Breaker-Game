@@ -2,13 +2,16 @@ use bevy::{
     math::bounding::{Aabb2d, IntersectsVolume},
     prelude::*,
 };
+use rand::Rng;
 use crate::Collider;
+use rand::prelude::*;
 
 const BALL_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
 const BALL_STARTING_POSITION: Vec3 = Vec3::new(0.0, -50.0, 1.0);
 const BALL_SIZE: Vec2 = Vec2::new(30.0, 30.0);
 const BALL_SPEED: f32 = 300.0;
 const BALL_INITIAL_DIRECTION: Vec2 = Vec2::new(0.5,-0.5);
+const BALL_PERFORMANCE_TEST: bool = true;
 
 #[derive(Component)]
 pub struct Ball {
@@ -20,12 +23,14 @@ pub struct Velocity(Vec2);
 pub fn spawn_ball(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
+    custom_color: Color,
+    starting_direction: Vec2,
 ) {
     let ball_texture = asset_server.load("textures/circle.png");
     commands.spawn((
         Sprite {
             image: ball_texture,
-            color: BALL_COLOR,
+            color: custom_color,
             custom_size: Some(BALL_SIZE),
             ..default()
         },
@@ -34,8 +39,32 @@ pub fn spawn_ball(
             ..default()
         },
         Ball { size: BALL_SIZE },
-        Velocity(BALL_SPEED * BALL_INITIAL_DIRECTION),
+        Velocity(BALL_SPEED * starting_direction),
     ));
+}
+
+pub fn setup_balls(
+    commands: &mut Commands,
+    asset_server: Res<AssetServer>,
+) {
+    if !BALL_PERFORMANCE_TEST {
+        spawn_ball(commands, &asset_server, BALL_COLOR, BALL_INITIAL_DIRECTION);
+        return;
+    }
+
+    let mut rng = rand::rng();
+
+    for _ in 0..10_000 {
+        let random_angle: f32 = rng.random_range(0.0..std::f32::consts::TAU);
+        let random_direction: Vec2 = Vec2::new(random_angle.cos(), random_angle.sin());
+        let random_color = Color::srgb(
+          rng.random_range(0.0..1.0),
+          rng.random_range(0.0..1.0),
+          rng.random_range(0.0..1.0),
+        );
+
+        spawn_ball(commands, &asset_server, random_color, random_direction);
+    }
 }
 
 pub fn apply_velocity(
@@ -63,35 +92,35 @@ pub fn check_ball_collisions(
         );
 
         for (collider_transform, collider) in &collider_query {
-            // Create an AABB for the collider
+            // creating an AABB for the collider
             let collider_aabb = Aabb2d::new(
                 collider_transform.translation.truncate(),
                 collider.size / 2.0,
             );
 
-            // Check if they overlap
+            // overlap check
             if ball_aabb.intersects(&collider_aabb) {
-                // Calculate the collision depth to figure out which side it hit
+                // collision depth to find out which side was hit
                 let min_dist = ball_aabb.min.max(collider_aabb.min);
                 let max_dist = ball_aabb.max.min(collider_aabb.max);
                 let overlap = max_dist - min_dist;
 
-                // Bounce along the axis with the shallowest penetration depth
+                // bouncing along the axis
                 if overlap.x < overlap.y {
-                    // Hit from left or right side
+                    // hit from the left or right side
                     ball_velocity.x *= -1.0;
 
-                    // Push the ball out of the collision to prevent sticking
+                    // pushing  ball out of the collision to prevent it sticking on
                     if ball_transform.translation.x < collider_transform.translation.x {
                         ball_transform.translation.x -= overlap.x;
                     } else {
                         ball_transform.translation.x += overlap.x;
                     }
                 } else {
-                    // Hit from top or bottom side
+                    // hit from top or bottom side
                     ball_velocity.y *= -1.0;
 
-                    // Push the ball out of the collision to prevent sticking
+                    // pushing  ball out of the collision to prevent it sticking on
                     if ball_transform.translation.y < collider_transform.translation.y {
                         ball_transform.translation.y -= overlap.y;
                     } else {
