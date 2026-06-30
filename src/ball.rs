@@ -2,21 +2,19 @@ use bevy::{
     math::bounding::{Aabb2d, IntersectsVolume},
     prelude::*,
 };
-use rand::Rng;
 use crate::Collider;
 use rand::prelude::*;
 
 const BALL_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
 const BALL_STARTING_POSITION: Vec3 = Vec3::new(0.0, -50.0, 1.0);
 const BALL_SIZE: Vec2 = Vec2::new(30.0, 30.0);
+const BALL_HALF_SIZE: Vec2 = Vec2::new(15.0, 15.0);
 const BALL_SPEED: f32 = 300.0;
 const BALL_INITIAL_DIRECTION: Vec2 = Vec2::new(0.5,-0.5);
 const BALL_PERFORMANCE_TEST: bool = true;
 
 #[derive(Component)]
-pub struct Ball {
-    size: Vec2,
-}
+pub struct Ball;
 #[derive(Component, Deref, DerefMut)]
 pub struct Velocity(Vec2);
 
@@ -38,7 +36,7 @@ pub fn spawn_ball(
             translation: BALL_STARTING_POSITION,
             ..default()
         },
-        Ball { size: BALL_SIZE },
+        Ball,
         Velocity(BALL_SPEED * starting_direction),
     ));
 }
@@ -54,7 +52,7 @@ pub fn setup_balls(
 
     let mut rng = rand::rng();
 
-    for _ in 0..10_000 {
+    for _ in 0..7_000 {
         let random_angle: f32 = rng.random_range(0.0..std::f32::consts::TAU);
         let random_direction: Vec2 = Vec2::new(random_angle.cos(), random_angle.sin());
         let random_color = Color::srgb(
@@ -68,27 +66,28 @@ pub fn setup_balls(
 }
 
 pub fn apply_velocity(
-    mut query: Query<(&mut Transform, &mut Velocity)>,
+    mut query: Query<(&mut Transform, &Velocity), With<Ball>>,
     time: Res<Time<Fixed>>
 ) {
     let delta_time: f32 = time.delta_secs();
-    for (mut transform, velocity) in &mut query {
+
+    query.par_iter_mut().for_each(|(mut transform, velocity)| {
         transform.translation.x += velocity.x * delta_time;
         transform.translation.y += velocity.y * delta_time;
-    }
+    });
 }
 
 pub fn check_ball_collisions(
     mut ball_query: Query<(&mut Transform, &mut Velocity, &Ball)>,
     collider_query: Query<(&Transform, &Collider), Without<Ball>>,
 ) {
-    for (mut ball_transform, mut ball_velocity, ball) in &mut ball_query {
+    for (mut ball_transform, mut ball_velocity, _) in &mut ball_query {
         // creating an axis-aligned bounding box (what aabb stands for) in 2D space. It's edges are always fully straight and cannot be rotated
         // first parameter is the center point position (in world space)
         // second parameter is basically setting the size in radius of the square from the center point
         let ball_aabb = Aabb2d::new(
             ball_transform.translation.truncate(),
-            ball.size / 2.0,
+            BALL_HALF_SIZE,
         );
 
         for (collider_transform, collider) in &collider_query {

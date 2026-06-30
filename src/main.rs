@@ -4,9 +4,8 @@ use bevy::prelude::*;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 use paddle::{spawn_paddle, move_paddle};
-use ball::{spawn_ball, apply_velocity};
+use ball::{setup_balls, apply_velocity, check_ball_collisions};
 use walls::{spawn_walls};
-use crate::ball::{check_ball_collisions, setup_balls};
 
 #[derive(Component)]
 pub struct Collider {
