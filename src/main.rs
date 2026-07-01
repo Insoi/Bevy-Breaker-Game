@@ -1,4 +1,5 @@
 mod paddle; mod ball; mod walls;
+mod modifiers;
 
 use bevy::prelude::*;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
