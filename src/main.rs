@@ -1,5 +1,7 @@
-mod paddle; mod ball; mod walls;
-mod modifiers;
+mod paddle;
+mod ball;
+mod walls;
+mod breakables;
 
 use bevy::prelude::*;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
@@ -7,6 +9,7 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use paddle::{spawn_paddle, move_paddle};
 use ball::{setup_balls, apply_velocity, check_ball_collisions};
 use walls::{spawn_walls};
+use breakables::{setup_formation};
 
 #[derive(Component)]
 pub struct Collider {
@@ -41,5 +44,6 @@ fn setup(
     spawn_paddle(&mut commands, 0., KeyCode::ArrowLeft, KeyCode::ArrowRight);
     spawn_walls(&mut commands);
     setup_balls(&mut commands, asset_server);
+    setup_formation(&mut commands, asset_server)
     //spawn_paddle(&mut comman-ds, 300., KeyCode::ArrowLeft, KeyCode::ArrowRight);
 }

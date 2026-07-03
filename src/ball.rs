@@ -9,7 +9,7 @@ const BALL_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
 const BALL_STARTING_POSITION: Vec3 = Vec3::new(0.0, -50.0, 1.0);
 const BALL_SIZE: Vec2 = Vec2::new(30.0, 30.0);
 const BALL_HALF_SIZE: Vec2 = Vec2::new(15.0, 15.0);
-const BALL_SPEED: f32 = 300.0;
+const BALL_SPEED: f32 = 250.0;
 const BALL_INITIAL_DIRECTION: Vec2 = Vec2::new(0.5,-0.5);
 const BALL_PERFORMANCE_TEST: bool = true;
 
@@ -52,7 +52,7 @@ pub fn setup_balls(
 
     let mut rng = rand::rng();
 
-    for _ in 0..7_000 {
+    for _ in 0..10_000 {
         let random_angle: f32 = rng.random_range(0.0..std::f32::consts::TAU);
         let random_direction: Vec2 = Vec2::new(random_angle.cos(), random_angle.sin());
         let random_color = Color::srgb(
