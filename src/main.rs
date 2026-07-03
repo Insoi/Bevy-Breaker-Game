@@ -44,6 +44,5 @@ fn setup(
     spawn_paddle(&mut commands, 0., KeyCode::ArrowLeft, KeyCode::ArrowRight);
     spawn_walls(&mut commands);
     setup_balls(&mut commands, asset_server);
-    setup_formation(&mut commands, asset_server)
     //spawn_paddle(&mut comman-ds, 300., KeyCode::ArrowLeft, KeyCode::ArrowRight);
 }
