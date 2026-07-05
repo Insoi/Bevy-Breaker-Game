@@ -7,11 +7,12 @@ use crate::GameLayer;
 const BALL_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
 const BALL_STARTING_POSITION: Vec3 = Vec3::new(0.0, -50.0, 1.0);
 const BALL_SIZE: Vec2 = Vec2::new(30.0, 30.0);
-const BALL_SPEED: f32 = 250.0;
+const BALL_SPEED: f32 = 300.0;
 const BALL_INITIAL_DIRECTION: Vec2 = Vec2::new(0.5,-0.5);
-const BALL_PERFORMANCE_TEST: bool = false;
+const START_WITH_MULTIPLE_BALLS: bool = true;
+const BALL_COUNT: i32 = 5;
 
-const MIN_BALL_VELOCITY_ANGLE: f32 = 45.0; // the clamped angle for ball velocity (prevents it from being stuck on a horizontal/vertical line)
+const MIN_BALL_VELOCITY_ANGLE: f32 = 35.0; // the clamped angle for ball velocity (prevents it from being stuck on a horizontal/vertical line)
 
 #[derive(Component)]
 pub struct Ball;
@@ -21,6 +22,7 @@ pub fn spawn_ball(
     asset_server: &Res<AssetServer>,
     custom_color: Color,
     starting_direction: Vec2,
+    spawn_position: Vec3,
 ) {
     let ball_texture = asset_server.load("textures/circle.png");
     commands.spawn((
@@ -30,7 +32,7 @@ pub fn spawn_ball(
             custom_size: Some(BALL_SIZE),
             ..default()
         },
-        Transform::from_translation(BALL_STARTING_POSITION),
+        Transform::from_translation(spawn_position),
         Ball,
         LinearVelocity(BALL_SPEED * starting_direction),
         RigidBody::Dynamic,
@@ -46,23 +48,32 @@ pub fn setup_balls(
     commands: &mut Commands,
     asset_server: Res<AssetServer>,
 ) {
-    if !BALL_PERFORMANCE_TEST {
-        spawn_ball(commands, &asset_server, BALL_COLOR, BALL_INITIAL_DIRECTION);
+    if !START_WITH_MULTIPLE_BALLS {
+        spawn_ball(commands, &asset_server, BALL_COLOR, BALL_INITIAL_DIRECTION, BALL_STARTING_POSITION);
         return;
     }
 
     let mut rng = rand::rng();
+    let slice_size = std::f32::consts::TAU / BALL_COUNT as f32;
+    let base_offset: f32 = rng.random_range(0.0..std::f32::consts::TAU);
 
-    for _ in 0..10000 {
-        let random_angle: f32 = rng.random_range(0.0..std::f32::consts::TAU);
+    let spacing = BALL_SIZE.x * 1.5;
+    let total_width = spacing * (BALL_COUNT as f32 - 1.0);
+    let start_x = -total_width / 2.0;
+
+    for i in 0..BALL_COUNT {
+        let slice_start = base_offset + i as f32 * slice_size;
+        let random_angle: f32 = rng.random_range(slice_start..slice_start + slice_size);
         let random_direction: Vec2 = Vec2::new(random_angle.cos(), random_angle.sin());
+        let spawn_position = BALL_STARTING_POSITION + Vec3::new(start_x + i as f32 * spacing, 0.0, 0.0);
+
         let random_color = Color::srgb(
           rng.random_range(0.0..1.0),
           rng.random_range(0.0..1.0),
           rng.random_range(0.0..1.0),
         );
 
-        spawn_ball(commands, &asset_server, random_color, random_direction);
+        spawn_ball(commands, &asset_server, random_color, random_direction, spawn_position);
     }
 }
 
@@ -104,12 +115,17 @@ pub fn detect_ball_collision(
     mut commands: Commands,
     collisions: Collisions,
     ball_query: Query<Entity, With<Ball>>,
-    breakable_query: Query<Entity, With<Breakable>>
+    mut breakable_query: Query<(Entity, &mut Breakable)>,
 ) {
     for ball in &ball_query {
-        for breakable in &breakable_query {
-            if collisions.contains(ball, breakable) {
-                commands.entity(breakable).despawn();
+        for (entity, mut breakable) in breakable_query.iter_mut() {
+            if collisions.contains(ball, entity) && breakable.collision_cooldown.is_finished() {
+                breakable.health -= 1;
+                breakable.collision_cooldown.reset();
+
+                if breakable.health <= 0 {
+                    commands.entity(entity).despawn();
+                }
             }
         }
     }
