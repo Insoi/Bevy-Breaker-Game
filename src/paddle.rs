@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use avian2d::prelude::*;
 use crate::GameLayer;
-use crate::walls::{LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
+use crate::walls::{BOTTOM_WALL, LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
 
-pub const PADDLE_START_Y: f32 = -150.0;
+pub const PADDLE_START_Y: f32 = BOTTOM_WALL + 60.0;
 pub const PADDLE_SIZE: Vec2 = Vec2::new(120.0, 20.0);
 pub const PADDLE_COLOR: Color = Color::srgb(0.3, 0.3, 0.7);
 pub const PADDLE_SPEED: f32 = 500.0;

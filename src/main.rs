@@ -1,7 +1,7 @@
 mod paddle;
 mod ball;
 mod walls;
-mod breakables;
+mod bricks;
 
 use avian2d::prelude::*;
 use bevy::prelude::*;
@@ -10,7 +10,7 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use paddle::{spawn_paddle, move_paddle};
 use ball::{setup_balls, detect_ball_collision, maintain_ball_speed};
 use walls::{spawn_walls};
-use breakables::{setup_formation};
+use bricks::{setup_formation};
 
 #[derive(PhysicsLayer, Default)]
 pub enum GameLayer {
@@ -18,6 +18,7 @@ pub enum GameLayer {
     Default,
     Ball,
     Wall,
+    Bricks,
     Paddle,
 }
 
@@ -49,5 +50,6 @@ fn setup(
     spawn_paddle(&mut commands, 0., KeyCode::ArrowLeft, KeyCode::ArrowRight);
     spawn_walls(&mut commands);
     setup_balls(&mut commands, asset_server);
+    setup_formation(&mut commands);
     //spawn_paddle(&mut comman-ds, 300., KeyCode::ArrowLeft, KeyCode::ArrowRight);
 }
