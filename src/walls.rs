@@ -1,5 +1,6 @@
 use bevy::prelude::*;
-use crate::Collider;
+use avian2d::prelude::*;
+use crate::GameLayer;
 
 pub const LEFT_WALL: f32 = -450.;
 pub const RIGHT_WALL: f32 = 450.;
@@ -11,11 +12,16 @@ pub const WALL_BLOCK_WIDTH: f32 = RIGHT_WALL - LEFT_WALL;
 pub const WALL_BLOCK_HEIGHT: f32 = TOP_WALL - BOTTOM_WALL;
 pub const WALL_COLOR: Color = Color::srgb(0.8, 0.8, 0.8);
 
+#[derive(Component)]
+pub struct GameWall;
+
 #[derive(Bundle)]
 struct WallBundle {
     sprite: Sprite,
     transform: Transform,
     collider: Collider,
+    rigid_body: RigidBody,
+    collision_layers: CollisionLayers,
 }
 
 enum WallLocation {
@@ -48,6 +54,7 @@ impl WallLocation {
 
 impl WallBundle {
     fn new(location: WallLocation) -> Self {
+        let size = location.size();
         Self {
             sprite: Sprite {
                 color: WALL_COLOR,
@@ -58,9 +65,9 @@ impl WallBundle {
                 translation: location.position().extend(0.0),
                 ..default()
             },
-            collider: Collider {
-                size: location.size(),
-            },
+            rigid_body: RigidBody::Static,
+            collision_layers: CollisionLayers::new(GameLayer::Wall, [GameLayer::Ball]),
+            collider: Collider::rectangle(size.x, size.y),
         }
     }
 }
@@ -72,6 +79,6 @@ pub fn spawn_walls(commands: &mut Commands, ) {
         WallLocation::Top,
         WallLocation::Bottom,
     ] {
-        commands.spawn(WallBundle::new(location));
+        commands.spawn((WallBundle::new(location), GameWall));
     }
 }

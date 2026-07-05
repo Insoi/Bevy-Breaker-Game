@@ -1,5 +1,6 @@
 use bevy::prelude::*;
-use crate::Collider;
+use avian2d::prelude::*;
+use crate::GameLayer;
 use crate::walls::{LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
 
 pub const PADDLE_START_Y: f32 = -150.0;
@@ -28,13 +29,12 @@ pub fn spawn_paddle(
             custom_size: Some(PADDLE_SIZE),
             ..default()
         },
-        Transform {
-            translation: vec3(x, PADDLE_START_Y,  0.),
-            ..default()
-        },
+        Transform::from_translation(vec3(x, PADDLE_START_Y,  0.)),
+        RigidBody::Kinematic,
         Paddle,
-        Collider { size: PADDLE_SIZE },
+        Collider::rectangle(PADDLE_SIZE.x, PADDLE_SIZE.y),
         Movement { left_key, right_key },
+        CollisionLayers::new(GameLayer::Paddle, [GameLayer::Ball]),
     ));
 }
 

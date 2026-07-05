@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use crate::Collider;
 
 const BREAKABLE_COLOR: Color = Color::srgb(0.3, 0.3, 0.8);
 const BREAKABLE_SIZE: Vec2 = Vec2::new(100.0, 30.0);
@@ -11,7 +10,7 @@ pub struct Breakable {
 
 fn spawn_breakable(
     commands: &mut Commands,
-    asset_server: Res<AssetServer>
+    //asset_server: Res<AssetServer>
 ) {
     commands.spawn((
         Sprite {
@@ -24,14 +23,13 @@ fn spawn_breakable(
             ..default()
         },
         Breakable { health: 2 },
-        Collider { size: BREAKABLE_SIZE },
     ));
 }
 
 pub fn setup_formation(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    level_index: u32,
+    //level_index: u32,
 ) {
-    spawn_breakable(&mut commands, asset_server);
+    //spawn_breakable(&mut commands, asset_server);
 }

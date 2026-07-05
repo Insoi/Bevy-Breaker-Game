@@ -3,22 +3,27 @@ mod ball;
 mod walls;
 mod breakables;
 
+use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 use paddle::{spawn_paddle, move_paddle};
-use ball::{setup_balls, apply_velocity, check_ball_collisions};
+use ball::{setup_balls, detect_ball_collision, maintain_ball_speed};
 use walls::{spawn_walls};
 use breakables::{setup_formation};
 
-#[derive(Component)]
-pub struct Collider {
-    size: Vec2,
+#[derive(PhysicsLayer, Default)]
+pub enum GameLayer {
+    #[default]
+    Default,
+    Ball,
+    Wall,
+    Paddle,
 }
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins((DefaultPlugins, PhysicsPlugins::default()))
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(LogDiagnosticsPlugin::default())
         .add_systems(Startup, setup)
@@ -26,8 +31,8 @@ fn main() {
             FixedUpdate,
             (
                 move_paddle,
-                apply_velocity,
-                check_ball_collisions.after(apply_velocity),
+                detect_ball_collision,
+                maintain_ball_speed.after(detect_ball_collision),
             ),
         )
         .run();
