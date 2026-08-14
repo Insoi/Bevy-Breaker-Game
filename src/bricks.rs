@@ -51,6 +51,7 @@ pub fn update_brick_appearance(
     mut query: Query<(&Breakable, &mut Sprite), Changed<Breakable>>,
 ) {
     for (breakable, mut sprite) in query.iter_mut() {
+        if breakable.health == 0 { return };
         sprite.color = HEALTH_AMOUNT_COLOR[(breakable.health - 1) as usize];
     }
 }

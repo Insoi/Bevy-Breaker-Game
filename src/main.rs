@@ -2,12 +2,14 @@ mod paddle;
 mod ball;
 mod walls;
 mod bricks;
+mod shop;
+mod inventory;
 
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
-use paddle::{spawn_paddle, move_paddle};
+use paddle::{DragState, spawn_paddle, move_paddle, handle_paddle_drag};
 use ball::{setup_balls, detect_ball_collision, maintain_ball_speed};
 use walls::{spawn_walls};
 use bricks::{setup_formation, update_brick_appearance, update_breakable_timers};
@@ -35,10 +37,12 @@ fn main() {
         .add_plugins((DefaultPlugins, PhysicsPlugins::default()))
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(LogDiagnosticsPlugin::default())
+        .init_resource::<DragState>()
         .add_systems(Startup, setup)
         .add_systems(
             FixedUpdate,
             (
+                handle_paddle_drag,
                 move_paddle,
                 detect_ball_collision,
                 update_breakable_timers,
@@ -57,8 +61,8 @@ fn setup(
     commands.spawn(Camera2d::default());
 
     // paddle(s)
-    spawn_paddle(&mut commands, 0., KeyCode::ArrowLeft, KeyCode::ArrowRight); // player 1
-    //spawn_paddle(&mut commands, 300., KeyCode::KeyA, KeyCode::KeyD); // player 2
+    spawn_paddle(&mut commands, 0.); // player 1
+    //spawn_paddle(&mut commands, 300.); // player 2
 
     // ect. ..
     spawn_walls(&mut commands);

@@ -13,7 +13,7 @@ const BALL_INITIAL_DIRECTION: Vec2 = Vec2::new(0.5,-0.5);
 const START_WITH_MULTIPLE_BALLS: bool = false;
 const BALL_COUNT: i32 = 5000;
 
-const MAX_BOUNCE_ANGLE: f32 = 60.0;
+const MAX_BOUNCE_ANGLE: f32 = 45.0;
 const MIN_BALL_VELOCITY_ANGLE: f32 = 8.0;
 const CURVE_POWER: f32 = 2.0;
 
