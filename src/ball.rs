@@ -3,7 +3,9 @@ use avian2d::prelude::*;
 use rand::prelude::*;
 use crate::bricks::Breakable;
 use crate::GameLayer;
-use crate::paddle::{Paddle, PADDLE_SIZE};
+use crate::paddle::{Paddle, PaddleVelocity, PADDLE_SIZE};
+use crate::walls::{GameWall, BOTTOM_WALL};
+use crate::resources::hit_stop::HitStop;
 
 const BALL_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
 const BALL_STARTING_POSITION: Vec3 = Vec3::new(0.0, -50.0, 1.0);
@@ -13,8 +15,8 @@ const BALL_INITIAL_DIRECTION: Vec2 = Vec2::new(0.5,-0.5);
 const START_WITH_MULTIPLE_BALLS: bool = false;
 const BALL_COUNT: i32 = 5000;
 
-const MAX_BOUNCE_ANGLE: f32 = 45.0;
-const MIN_BALL_VELOCITY_ANGLE: f32 = 8.0;
+const MAX_BOUNCE_ANGLE: f32 = 70.0;
+const MIN_BALL_VELOCITY_ANGLE: f32 = 25.0;
 const CURVE_POWER: f32 = 2.0;
 
 #[derive(Component)]
@@ -49,7 +51,7 @@ pub fn spawn_ball(
 
 pub fn setup_balls(
     commands: &mut Commands,
-    asset_server: Res<AssetServer>,
+    asset_server: &Res<AssetServer>,
 ) {
     if !START_WITH_MULTIPLE_BALLS {
         spawn_ball(commands, &asset_server, BALL_COLOR, BALL_INITIAL_DIRECTION, BALL_STARTING_POSITION);
@@ -116,10 +118,13 @@ pub fn maintain_ball_speed(
 
 pub fn detect_ball_collision(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     collisions: Collisions,
+    mut hit_stop: ResMut<HitStop>,
     mut ball_query: Query<(Entity, &Transform, &mut LinearVelocity), With<Ball>>,
     mut breakable_query: Query<(Entity, &mut Breakable)>,
-    paddle_query: Query<(Entity, &Transform), With<Paddle>>,
+    paddle_query: Query<(Entity, &Transform, &PaddleVelocity), With<Paddle>>,
+    wall_query: Query<(Entity, &Transform), With<GameWall>>,
 ) {
     for (ball_entity, ball_transform, mut velocity) in &mut ball_query {
         for (entity, mut breakable) in breakable_query.iter_mut() {
@@ -133,7 +138,7 @@ pub fn detect_ball_collision(
             }
         }
 
-        for (paddle_entity, paddle_transform) in &paddle_query {
+        for (paddle_entity, paddle_transform, paddle_velocity) in &paddle_query {
             if collisions.contains(ball_entity, paddle_entity) {
                 let offset = ((ball_transform.translation.x - paddle_transform.translation.x)
                     / (PADDLE_SIZE.x / 2.0))
@@ -142,12 +147,34 @@ pub fn detect_ball_collision(
                 let max_angle_rad = MAX_BOUNCE_ANGLE.to_radians();
                 let angle = offset.signum() * offset.abs().powf(CURVE_POWER) * max_angle_rad;
 
-                let direction = Vec2::new(angle.sin(), angle.cos());
-                let speed = velocity.length();
+                let mut direction = Vec2::new(angle.sin(), angle.cos());
 
+                const PADDLE_VELOCITY_INFLUENCE: f32 = 0.15;
+                direction.x += paddle_velocity.0 * PADDLE_VELOCITY_INFLUENCE / BALL_SPEED;
+                direction = direction.normalize();
+
+                let speed = velocity.length();
                 velocity.0 = direction * speed;
+
+                hit_stop.0 = Timer::from_seconds(0.04, TimerMode::Once);
+            }
+        }
+
+        for (wall_entity, wall_transform) in wall_query.iter() {
+            if collisions.contains(ball_entity, wall_entity) {
+                println!("Ball {:?} colliding with wall at {:?}", ball_entity, wall_transform.translation);
+                println!("Ball hit wall — velocity: {:?}, angle: {:.1}°",
+                         velocity.0,
+                         velocity.0.y.atan2(velocity.0.x).to_degrees()
+                );
+                if wall_transform.translation.y != BOTTOM_WALL { return }
+
+                commands.entity(ball_entity).despawn();
+                setup_balls(&mut commands, &asset_server);
             }
         }
     }
 }
+
+
 

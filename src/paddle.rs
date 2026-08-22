@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use avian2d::prelude::*;
+use bevy::log::tracing_subscriber::fmt::time;
 use crate::GameLayer;
 use crate::walls::{BOTTOM_WALL, LEFT_WALL, RIGHT_WALL, WALL_THICKNESS};
 
@@ -7,9 +8,13 @@ pub const PADDLE_START_Y: f32 = BOTTOM_WALL + 60.0;
 pub const PADDLE_SIZE: Vec2 = Vec2::new(120.0, 20.0);
 pub const PADDLE_COLOR: Color = Color::srgb(0.3, 0.3, 0.7);
 const PADDLE_HITBOX_PADDING: f32 = 48.0; // for QOL purposes when dragging
+const MAX_PADDLE_STEP: f32 = 40.0;
 
 #[derive(Component)]
 pub struct Paddle;
+
+#[derive(Component, Default)]
+pub struct PaddleVelocity(pub f32);
 
 #[derive(Resource, Default)]
 pub struct DragState {
@@ -57,7 +62,7 @@ pub fn handle_paddle_drag(
             let max = transform.translation.truncate() + half;
 
             if world_pos.x >= min.x && world_pos.x <= max.x && world_pos.y >= min.y && world_pos.y <= max.y {
-                info!("DEBUG: moving paddle {:?}", entity);
+                //info!("DEBUG: moving paddle {:?}", entity);
                 drag_state.entity = Some(entity);
                 break;
             }
@@ -69,7 +74,8 @@ pub fn move_paddle(
     windows: Query<&Window>,
     camera_query: Query<(&Camera, &GlobalTransform)>,
     drag_state: Res<DragState>,
-    mut query: Query<&mut Transform, With<Paddle>>,
+    time: Res<Time>,
+    mut query: Query<(&mut Transform, &mut PaddleVelocity), With<Paddle>>,
 ) {
     let Some(dragged_entity) = drag_state.entity else { return };
     let Ok(window) = windows.single() else { return };
@@ -77,10 +83,17 @@ pub fn move_paddle(
     let Ok((camera, camera_transform)) = camera_query.single() else { return };
     let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, cursor_pos) else { return };
 
-    let Ok(mut transform) = query.get_mut(dragged_entity) else { return };
+    let Ok((mut transform, mut velocity)) = query.get_mut(dragged_entity) else { return };
 
     let mut new_x = world_pos.x;
     new_x = new_x.min(RIGHT_WALL - (WALL_THICKNESS + PADDLE_SIZE.x) * 0.5);
     new_x = new_x.max(LEFT_WALL + (WALL_THICKNESS + PADDLE_SIZE.x) * 0.5);
-    transform.translation.x = new_x;
+
+    let delta = (new_x - transform.translation.x).clamp(-MAX_PADDLE_STEP, MAX_PADDLE_STEP);
+
+    let dt = time.delta_secs();
+    if dt > 0.0 {
+        velocity.0 = delta / dt; // your custom PaddleVelocity, used later for ball bounce influence
+    }
+    transform.translation.x += delta;
 }

@@ -4,6 +4,7 @@ mod walls;
 mod bricks;
 mod shop;
 mod inventory;
+mod resources;
 
 use avian2d::prelude::*;
 use bevy::prelude::*;
@@ -13,6 +14,7 @@ use paddle::{DragState, spawn_paddle, move_paddle, handle_paddle_drag};
 use ball::{setup_balls, detect_ball_collision, maintain_ball_speed};
 use walls::{spawn_walls};
 use bricks::{setup_formation, update_brick_appearance, update_breakable_timers};
+use resources::hit_stop::{HitStop, apply_hit_stop};
 
 //TODO: Learn what custom plugins are and use them
 //TODO: Differentiate the Brick entity with the breakables entity (naming convention is a bit confusing atm)
@@ -38,17 +40,20 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(LogDiagnosticsPlugin::default())
         .init_resource::<DragState>()
+        .init_resource::<HitStop>()
         .add_systems(Startup, setup)
         .add_systems(
             FixedUpdate,
             (
+                apply_hit_stop,
                 handle_paddle_drag,
                 move_paddle,
                 detect_ball_collision,
                 update_breakable_timers,
                 update_brick_appearance,
                 maintain_ball_speed.after(detect_ball_collision),
-            ),
+            )
+                .chain(),
         )
         .run();
 }
@@ -66,6 +71,6 @@ fn setup(
 
     // ect. ..
     spawn_walls(&mut commands);
-    setup_balls(&mut commands, asset_server);
+    setup_balls(&mut commands, &asset_server);
     setup_formation(&mut commands);
 }
